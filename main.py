@@ -45,13 +45,16 @@ async def stream_proxy(clip_id: int, db: Session = Depends(get_db)):
     if not clip:
         raise HTTPException(status_code=404, detail="Clip not found")
 
-    controller.increment_play_count(db, clip_id)
-    stream_counter.labels(clip_id=str(clip_id)).inc()
     async def iterfile():
+        first_chunk = True
         async with httpx.AsyncClient() as client:
             async with client.stream("GET", clip.audio_url) as r:
                 async for chunk in r.aiter_bytes():
-                    yield chunk
+                  if first_chunk:
+                    controller.increment_play_count(db, clip_id)
+                    stream_counter.labels(clip_id=str(clip_id)).inc()
+                    first_chunk = False
+                  yield chunk
 
     return StreamingResponse(iterfile(), media_type="audio/mpeg")
 
