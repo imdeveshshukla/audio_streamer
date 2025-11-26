@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Header, Request
 import uvicorn
 from fastapi.responses import StreamingResponse
 import httpx
@@ -9,7 +9,18 @@ from app import controller
 from starlette_exporter import PrometheusMiddleware, handle_metrics
 from prometheus_client import Counter
 Base.metadata.create_all(bind=engine)
-app = FastAPI()
+from app.config import settings
+
+async def verify_api_key(request: Request, x_api_key: str = Header(None)):
+    if request.url.path == "/metrics": # allow metrics access
+        return
+
+    if x_api_key != settings.API_KEY:
+        raise HTTPException(status_code=403, detail="Unauthorized")
+
+
+app = FastAPI(dependencies=[Depends(verify_api_key)])
+
 
 app.add_middleware(
     PrometheusMiddleware,
