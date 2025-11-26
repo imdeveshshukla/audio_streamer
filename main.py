@@ -12,7 +12,8 @@ Base.metadata.create_all(bind=engine)
 from app.config import settings
 
 async def verify_api_key(request: Request, x_api_key: str = Header(None)):
-    if request.url.path == "/metrics": # allow metrics access
+    # Public endpoints
+    if request.url.path in ["/", "/metrics"]:
         return
 
     if x_api_key != settings.API_KEY:
@@ -35,6 +36,32 @@ stream_counter = Counter(
     "Number of times a clip is streamed",
     ["clip_id"]
 )
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return {
+        "service": "Audio Streaming Service",
+        "version": "1.0.0",
+        "description": (
+            "A lightweight audio preview streaming backend built with FastAPI. "
+            "Streams MP3s, tracks play counts, exposes Prometheus metrics, and runs fully in Docker."
+        ),
+        "endpoints": {
+            "public": ["/", "/metrics"],
+            "protected": [
+                "/play",
+                "/play/{id}/stream",
+                "/play/{id}/stats",
+                "/play (POST)"
+            ]
+        },
+        "note": (
+            "All /play routes are protected by an API key. "
+            "To get access, please contact Devesh. "
+        ),
+        "repo": "https://github.com/imdeveshshukla/audio_streamer",
+        "developer": "Devesh Shukla"
+    }
 
 
 @app.get("/play", response_model=list[schemas.ClipBase])
