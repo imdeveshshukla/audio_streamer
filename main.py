@@ -59,5 +59,10 @@ async def stream_proxy(clip_id: int, db: Session = Depends(get_db)):
     return StreamingResponse(iterfile(), media_type="audio/mpeg")
 
 
+@app.post("/play", response_model=schemas.ClipBase)
+def create_new_clip(clip: schemas.ClipCreate, db: Session = Depends(get_db)):
+    new_clip = controller.create_clip(db, clip)
+    return new_clip
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

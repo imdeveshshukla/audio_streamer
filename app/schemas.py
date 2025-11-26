@@ -20,3 +20,13 @@ class ClipStats(BaseModel):
     
     class Config:
         orm_mode = True
+        
+class ClipCreate(BaseModel):
+    title: str
+    description: str | None = None
+    genre: str | None = None
+    duration: str | None = None
+    audio_url: str
+
+    class Config:
+        orm_mode = True
